@@ -9,8 +9,9 @@ This pull request addresses issue #674 by integrating a locally hosted alternati
 - Updated the `scrub` method in the `Screenshot` class to call the `modify_image` method before scrubbing the image.
 
 ## Testing
-- The changes have been tested to ensure that the modified images are being scrubbed correctly without triggering OpenAI's safety system.
-- All existing tests have been run to verify that the changes do not break any existing functionality.
+- The changes have not yet been tested due to pending resolution of dependency issues.
+- Once the dependency issues are resolved, tests will be run to ensure that the modified images are being scrubbed correctly without triggering OpenAI's safety system.
+- All existing tests will be run to verify that the changes do not break any existing functionality.
 
 ## Related Issue
 - Closes #674
