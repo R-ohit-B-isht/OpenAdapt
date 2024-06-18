@@ -78,7 +78,7 @@ spacy==3.7.0
 sphinx==7.0.1
 sqlalchemy==1.4.43
 sumy==0.11.0
-torch==2.0.0
+torch==2.0.1
 torchvision==0.15.2
 tqdm==4.64.0
 transformers==4.29.2
