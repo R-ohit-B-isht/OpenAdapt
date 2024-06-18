@@ -19,6 +19,10 @@ from openadapt.strategies.mixins.ocr import OCRReplayStrategyMixin
 from openadapt.strategies.mixins.sam import SAMReplayStrategyMixin
 from openadapt.strategies.mixins.summary import SummaryReplayStrategyMixin
 
+import textgrad as tg
+import numpy as np
+import random
+from textgrad.tasks import load_task
 
 class DemoReplayStrategy(
     HuggingFaceReplayStrategyMixin,
@@ -45,6 +49,15 @@ class DemoReplayStrategy(
         self.screenshots = crud.get_screenshots(session, recording)
         self.screenshot_idx = 0
 
+        # Initialize TextGrad components
+        self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
+        self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
+        tg.set_backward_engine(self.llm_api_eval, override=True)
+        self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
+        self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
+        self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
+        self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
+
     def get_next_action_event(
         self,
         screenshot: Screenshot,
@@ -59,12 +72,6 @@ class DemoReplayStrategy(
         Returns:
             None: No action event is returned in this demo strategy.
         """
-        # ascii_text = self.get_ascii_text(screenshot)
-        # logger.info(f"ascii_text=\n{ascii_text}")
-
-        # ocr_text = self.get_ocr_text(screenshot)
-        # logger.info(f"ocr_text=\n{ocr_text}")
-
         screenshot_bbox = self.get_screenshot_bbox(screenshot)
         logger.info(f"screenshot_bbox=\n{screenshot_bbox}")
 
@@ -80,16 +87,79 @@ class DemoReplayStrategy(
         prompt = " ".join(event_strs + history_strs)
         N = max(0, len(prompt) - MAX_INPUT_SIZE)
         prompt = prompt[N:]
-        # logger.info(f"{prompt=}")
-        max_tokens = 10
-        completion = self.get_completion(prompt, max_tokens)
-        # logger.info(f"{completion=}")
 
-        # only take the first <...>
+        # Optimize the prompt using TextGrad
+        self.system_prompt.set_value(prompt)
+        for epoch in range(3):
+            for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
+                pbar.set_description(f"Training step {steps}. Epoch {epoch}")
+                self.optimizer.zero_grad()
+                losses = []
+                for (x, y) in zip(batch_x, batch_y):
+                    x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
+                    y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+                    response = self.system_prompt(x)
+                    try:
+                        eval_output_variable = self.eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
+                    except:
+                        eval_output_variable = self.eval_fn([x, y, response])
+                    losses.append(eval_output_variable)
+                total_loss = tg.sum(losses)
+                total_loss.backward()
+                self.optimizer.step()
+                self.run_validation_revert()
+
+        optimized_prompt = self.system_prompt.get_value()
+        max_tokens = 10
+        completion = self.get_completion(optimized_prompt, max_tokens)
+
         result = completion.split(">")[0].strip(" <>")
-        # logger.info(f"{result=}")
         self.result_history.append(result)
 
-        # TODO: parse result into ActionEvent(s)
         self.screenshot_idx += 1
         return None
+
+    def run_validation_revert(self):
+        val_performance = np.mean(self.eval_dataset(self.val_set, self.eval_fn, self.system_prompt))
+        previous_performance = np.mean(self.results["validation_acc"][-1])
+        print("val_performance: ", val_performance)
+        print("previous_performance: ", previous_performance)
+        previous_prompt = self.results["prompt"][-1]
+
+        if val_performance < previous_performance:
+            print(f"rejected prompt: {self.system_prompt.value}")
+            self.system_prompt.set_value(previous_prompt)
+            val_performance = previous_performance
+
+        self.results["validation_acc"].append(val_performance)
+
+    def eval_dataset(self, test_set, eval_fn, model, max_samples: int=None):
+        if max_samples is None:
+            max_samples = len(test_set)
+        accuracy_list = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = []
+            for _, sample in enumerate(test_set):
+                future = executor.submit(self.eval_sample, sample, eval_fn, model)
+                futures.append(future)
+                if len(futures) >= max_samples:
+                    break
+            tqdm_loader = tqdm(concurrent.futures.as_completed(futures), total=len(futures), position=0)
+            for future in tqdm_loader:
+                acc_item = future.result()
+                accuracy_list.append(acc_item)
+                tqdm_loader.set_description(f"Accuracy: {np.mean(accuracy_list)}")
+        return accuracy_list
+
+    def eval_sample(self, item, eval_fn, model):
+        x, y = item
+        x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
+        y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+        response = model(x)
+        try:
+            eval_output_variable = eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
+            return int(eval_output_variable.value)
+        except:
+            eval_output_variable = eval_fn([x, y, response])
+            eval_output_parsed = eval_fn.parse_output(eval_output_variable)
+            return int(eval_output_parsed)
