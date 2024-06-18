@@ -270,10 +270,14 @@ def get_double_click_distance_pixels() -> int:
     elif sys.platform.startswith("linux"):
         try:
             import subprocess
-            result = subprocess.run(["xset", "q"], capture_output=True, text=True)
-            for line in result.stdout.splitlines():
-                if "Double click distance" in line:
-                    return int(line.split()[-1])
+            # Check for GNOME environment
+            result = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "double-click-distance"], capture_output=True, text=True)
+            if result.returncode == 0:
+                return int(result.stdout.strip())
+            # Check for KDE environment
+            result = subprocess.run(["kreadconfig5", "--key", "DoubleClickInterval", "--group", "KDE"], capture_output=True, text=True)
+            if result.returncode == 0:
+                return int(result.stdout.strip())
         except Exception as e:
             logger.warning(f"Failed to get double click distance on Linux: {e}")
         # Define a default value for Linux
