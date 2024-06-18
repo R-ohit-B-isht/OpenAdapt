@@ -105,6 +105,41 @@ class VanillaReplayStrategy(strategies.base.BaseReplayStrategy):
         logger.info(f"action_history=\n{pformat(action_history_dicts)}")
 
 
+class CursorReplayStrategy(VanillaReplayStrategy):
+    """Replay strategy that adds a red dot on the target location for visual feedback."""
+
+    def get_next_action_event(
+        self,
+        screenshot: models.Screenshot,
+        window_event: models.WindowEvent,
+    ) -> models.ActionEvent | None:
+        """Get the next ActionEvent for replay with a red dot on the target location.
+
+        Args:
+            screenshot (models.Screenshot): The screenshot object.
+            window_event (models.WindowEvent): The window event object.
+
+        Returns:
+            models.ActionEvent or None: The next ActionEvent for replay or None
+              if there are no more events.
+        """
+        action_event = super().get_next_action_event(screenshot, window_event)
+        if action_event:
+            # Paint a red dot on the target location
+            target_x, target_y = action_event.x, action_event.y
+            image = screenshot.image
+            draw = ImageDraw.Draw(image)
+            dot_radius = 5
+            draw.ellipse(
+                (target_x - dot_radius, target_y - dot_radius, target_x + dot_radius, target_y + dot_radius),
+                fill="red",
+                outline="red",
+            )
+            # Update the screenshot with the red dot
+            screenshot.image = image
+        return action_event
+
+
 def describe_recording(
     recording: models.Recording,
     process_events: bool,
