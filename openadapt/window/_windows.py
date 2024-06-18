@@ -1,9 +1,13 @@
+import sys\nif sys.platform == "win32":\n    import pywinauto
 from pprint import pprint
 import pickle
 import time
 
 from loguru import logger
-import pywinauto
+import platform
+
+if platform.system() == "Windows":
+    import pywinauto
 
 
 def get_active_window_state(read_window_data: bool) -> dict:
