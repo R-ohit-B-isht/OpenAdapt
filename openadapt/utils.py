@@ -222,13 +222,23 @@ def get_double_click_interval_seconds() -> float:
         return get_double_click_interval_seconds.override_value
     if sys.platform == "darwin":
         from AppKit import NSEvent
-
         return NSEvent.doubleClickInterval()
     elif sys.platform == "win32":
         # https://stackoverflow.com/a/31686041/95989
         from ctypes import windll
-
         return windll.user32.GetDoubleClickTime() / 1000
+    elif sys.platform.startswith("linux"):
+        try:
+            import subprocess
+            result = subprocess.run(["xset", "q"], capture_output=True, text=True)
+            for line in result.stdout.splitlines():
+                if "Double click time" in line:
+                    return float(line.split()[-1]) / 1000
+        except Exception as e:
+            logger.warning(f"Failed to get double click interval on Linux: {e}")
+        # Define a default value for Linux
+        DEFAULT_DOUBLE_CLICK_INTERVAL_SECONDS = 0.5
+        return DEFAULT_DOUBLE_CLICK_INTERVAL_SECONDS
     else:
         raise Exception(f"Unsupported {sys.platform=}")
 
@@ -257,6 +267,22 @@ def get_double_click_distance_pixels() -> int:
         if x != y:
             logger.warning(f"{x=} != {y=}")
         return max(x, y)
+    elif sys.platform.startswith("linux"):
+        try:
+            import subprocess
+            # Check for GNOME environment
+            result = subprocess.run(["gsettings", "get", "org.gnome.desktop.interface", "double-click-distance"], capture_output=True, text=True)
+            if result.returncode == 0:
+                return int(result.stdout.strip())
+            # Check for KDE environment
+            result = subprocess.run(["kreadconfig5", "--key", "DoubleClickInterval", "--group", "KDE"], capture_output=True, text=True)
+            if result.returncode == 0:
+                return int(result.stdout.strip())
+        except Exception as e:
+            logger.warning(f"Failed to get double click distance on Linux: {e}")
+        # Define a default value for Linux
+        DEFAULT_DOUBLE_CLICK_DISTANCE_PIXELS = 4
+        return DEFAULT_DOUBLE_CLICK_DISTANCE_PIXELS
     else:
         raise Exception(f"Unsupported {sys.platform=}")
 
