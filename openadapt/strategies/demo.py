@@ -90,6 +90,7 @@ class DemoReplayStrategy(
 
         # Optimize the prompt using TextGrad
         self.system_prompt.set_value(prompt)
+        print(f"Initial prompt: {prompt}")
         for epoch in range(3):
             for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
                 pbar.set_description(f"Training step {steps}. Epoch {epoch}")
@@ -105,11 +106,12 @@ class DemoReplayStrategy(
                         eval_output_variable = self.eval_fn([x, y, response])
                     losses.append(eval_output_variable)
                 total_loss = tg.sum(losses)
+                print(f"Epoch {epoch}, Step {steps}, Loss: {total_loss.value}")
                 total_loss.backward()
                 self.optimizer.step()
                 self.run_validation_revert()
-
         optimized_prompt = self.system_prompt.get_value()
+        print(f"Optimized prompt: {optimized_prompt}")
         max_tokens = 10
         completion = self.get_completion(optimized_prompt, max_tokens)
 
