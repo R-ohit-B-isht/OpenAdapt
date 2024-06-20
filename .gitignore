@@ -44,3 +44,6 @@ build/
 # Ignore virtual environment directory and Poetry log
 venv/
 poetry_install.log
+
+# Ignore logs directory
+logs/
