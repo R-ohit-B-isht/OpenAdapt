@@ -43,6 +43,7 @@ class DemoReplayStrategy(
         Args:
             recording (Recording): The recording to replay.
         """
+        print("Initializing DemoReplayStrategy")
         super().__init__(recording)
         self.result_history = []
         session = crud.get_new_session(read_only=True)
@@ -50,6 +51,7 @@ class DemoReplayStrategy(
         self.screenshot_idx = 0
 
         # Initialize TextGrad components
+        print("Initializing TextGrad components")
         self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
         self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
         tg.set_backward_engine(self.llm_api_eval, override=True)
@@ -57,6 +59,8 @@ class DemoReplayStrategy(
         self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
         self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
         self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
+        print("TextGrad components initialized")
+        print("DemoReplayStrategy initialized")
 
     def get_next_action_event(
         self,
@@ -72,6 +76,7 @@ class DemoReplayStrategy(
         Returns:
             None: No action event is returned in this demo strategy.
         """
+        print("Executing get_next_action_event")
         screenshot_bbox = self.get_screenshot_bbox(screenshot)
         logger.info(f"screenshot_bbox=\n{screenshot_bbox}")
 
@@ -119,6 +124,7 @@ class DemoReplayStrategy(
         self.result_history.append(result)
 
         self.screenshot_idx += 1
+        print("Completed get_next_action_event")
         return None
 
     def run_validation_revert(self):
