@@ -97,7 +97,9 @@ class DemoReplayStrategy(
         self.system_prompt.set_value(prompt)
         print(f"Initial prompt: {prompt}")
         for epoch in range(3):
+            print(f"Starting epoch {epoch}")
             for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
+                print(f"Starting step {steps} of epoch {epoch}")
                 pbar.set_description(f"Training step {steps}. Epoch {epoch}")
                 self.optimizer.zero_grad()
                 losses = []
@@ -114,7 +116,9 @@ class DemoReplayStrategy(
                 print(f"Epoch {epoch}, Step {steps}, Loss: {total_loss.value}")
                 total_loss.backward()
                 self.optimizer.step()
+                print(f"Completed step {steps} of epoch {epoch}")
                 self.run_validation_revert()
+            print(f"Completed epoch {epoch}")
         optimized_prompt = self.system_prompt.get_value()
         print(f"Optimized prompt: {optimized_prompt}")
         max_tokens = 10
@@ -128,6 +132,7 @@ class DemoReplayStrategy(
         return None
 
     def run_validation_revert(self):
+        print("Running validation revert")
         val_performance = np.mean(self.eval_dataset(self.val_set, self.eval_fn, self.system_prompt))
         previous_performance = np.mean(self.results["validation_acc"][-1])
         print("val_performance: ", val_performance)
@@ -140,8 +145,10 @@ class DemoReplayStrategy(
             val_performance = previous_performance
 
         self.results["validation_acc"].append(val_performance)
+        print("Completed validation revert")
 
     def eval_dataset(self, test_set, eval_fn, model, max_samples: int=None):
+        print("Evaluating dataset")
         if max_samples is None:
             max_samples = len(test_set)
         accuracy_list = []
@@ -157,9 +164,11 @@ class DemoReplayStrategy(
                 acc_item = future.result()
                 accuracy_list.append(acc_item)
                 tqdm_loader.set_description(f"Accuracy: {np.mean(accuracy_list)}")
+        print("Completed dataset evaluation")
         return accuracy_list
 
     def eval_sample(self, item, eval_fn, model):
+        print("Evaluating sample")
         x, y = item
         x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
         y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")

@@ -317,6 +317,14 @@ def display_event(
     else:
         raise Exception("unhandled {action_event.name=}")
 
+    # Disable display functionality in headless environment
+    if not os.environ.get("DISPLAY"):
+        logger.info("Running in headless environment; skipping image display.")
+        return image
+
+    # Display the image (commented out for headless environment)
+    # image.show()
+
     return image
 
 
