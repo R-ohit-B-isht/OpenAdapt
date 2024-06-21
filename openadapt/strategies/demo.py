@@ -65,36 +65,42 @@ class DemoReplayStrategy(
     def initialize_textgrad(self):
         print("Starting TextGrad initialization")
         try:
+            print("Attempting to initialize llm_api_eval")
             self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
             print("Initialized llm_api_eval")
         except Exception as e:
             print(f"Error initializing llm_api_eval: {e}")
 
         try:
+            print("Attempting to initialize llm_api_test")
             self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
             print("Initialized llm_api_test")
         except Exception as e:
             print(f"Error initializing llm_api_test: {e}")
 
         try:
+            print("Attempting to set backward engine")
             tg.set_backward_engine(self.llm_api_eval, override=True)
             print("Set backward engine")
         except Exception as e:
             print(f"Error setting backward engine: {e}")
 
         try:
+            print("Attempting to load task")
             self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
             print("Loaded task")
         except Exception as e:
             print(f"Error loading task: {e}")
 
         try:
+            print("Attempting to initialize system prompt variable")
             self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
             print("Initialized system prompt variable")
         except Exception as e:
             print(f"Error initializing system prompt variable: {e}")
 
         try:
+            print("Attempting to initialize optimizer")
             self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
             print("Initialized optimizer")
         except Exception as e:
@@ -107,6 +113,7 @@ class DemoReplayStrategy(
         for i in range(5):  # Example loop for testing
             print(f"Optimization iteration {i+1}")
             try:
+                print(f"Attempting optimization step {i+1}")
                 self.optimizer.step()
                 print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
             except Exception as e:
@@ -214,4 +221,22 @@ print("Completed demo.py execution")
 
 print('Before initializing TextGrad components')
 print('After initializing TextGrad components')
+
+print('Starting llm_api_eval initialization')
+print('Completed llm_api_eval initialization')
+
+print('Starting llm_api_test initialization')
+print('Completed llm_api_test initialization')
+
+print('Starting backward engine setup')
+print('Completed backward engine setup')
+
+print('Starting task loading')
+print('Completed task loading')
+
+print('Starting system prompt variable initialization')
+print('Completed system prompt variable initialization')
+
+print('Starting optimizer initialization')
+print('Completed optimizer initialization')
 
