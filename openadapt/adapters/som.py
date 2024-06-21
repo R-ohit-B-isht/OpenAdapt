@@ -9,7 +9,7 @@ import tempfile
 from loguru import logger
 from PIL import Image
 import fire
-import gradio_client
+import gradio as gr
 
 from openadapt.config import config
 
@@ -58,10 +58,10 @@ def predict(
     """
     assert server_url, server_url
     assert server_url.startswith("http"), server_url
-    client = gradio_client.Client(server_url)
+    client = gr.Interface.load(server_url)
     result = client.predict(
         {
-            "background": gradio_client.file(file_path),
+            "background": gr.File(file_path),
         },
         granularity,
         segmentation_mode,

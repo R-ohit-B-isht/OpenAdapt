@@ -12,7 +12,7 @@ import shutil
 import subprocess
 import sys
 
-import gradio_client
+import gradio
 import nicegui
 import oa_pynput
 import pydicom
@@ -32,7 +32,7 @@ def main() -> None:
         oa_pynput,
         pydicom,
         spacy_alignments,
-        gradio_client,
+        gradio,
         ultralytics,
     ]
     if sys.platform == "win32":
