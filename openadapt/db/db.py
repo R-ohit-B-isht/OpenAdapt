@@ -67,7 +67,6 @@ def get_base(engine: sa.engine) -> sa.engine:
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
     Base = declarative_base(
         cls=BaseModel,
-        bind=engine,
         metadata=metadata,
     )
     return Base
@@ -77,6 +76,7 @@ engine = get_engine()
 Base = get_base(engine)
 Session = sessionmaker(bind=engine)
 
+Base.metadata.create_all(engine)
 
 def get_read_only_session_maker(_engine: Optional["engine"] = None) -> sessionmaker:
     """Create a read-only session maker.
