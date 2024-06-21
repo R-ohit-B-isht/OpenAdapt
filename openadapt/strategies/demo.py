@@ -5,6 +5,8 @@ Usage:
     $ python -m openadapt.replay DemoReplayStrategy
 """
 
+print("Starting demo.py execution")
+
 from loguru import logger
 
 from openadapt.db import crud
@@ -106,6 +108,7 @@ class DemoReplayStrategy(
                 for (x, y) in zip(batch_x, batch_y):
                     x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
                     y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+                    print(f"Step {steps}, x: {x.value}, y: {y.value}")
                     response = self.system_prompt(x)
                     try:
                         eval_output_variable = self.eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
@@ -122,7 +125,7 @@ class DemoReplayStrategy(
         optimized_prompt = self.system_prompt.get_value()
         print(f"Optimized prompt: {optimized_prompt}")
         max_tokens = 10
-        completion = self.get_completion(optimized_prompt, max_tokens)
+        completion = self.get_completion(prompt, max_tokens)
 
         result = completion.split(">")[0].strip(" <>")
         self.result_history.append(result)
@@ -180,3 +183,5 @@ class DemoReplayStrategy(
             eval_output_variable = eval_fn([x, y, response])
             eval_output_parsed = eval_fn.parse_output(eval_output_variable)
             return int(eval_output_parsed)
+
+print("Completed demo.py execution")
