@@ -64,25 +64,53 @@ class DemoReplayStrategy(
 
     def initialize_textgrad(self):
         print("Starting TextGrad initialization")
-        self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
-        print("Initialized llm_api_eval")
-        self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
-        print("Initialized llm_api_test")
-        tg.set_backward_engine(self.llm_api_eval, override=True)
-        print("Set backward engine")
-        self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
-        print("Loaded task")
-        self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
-        print("Initialized system prompt variable")
-        self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
-        print("Initialized optimizer")
+        try:
+            self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
+            print("Initialized llm_api_eval")
+        except Exception as e:
+            print(f"Error initializing llm_api_eval: {e}")
+
+        try:
+            self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
+            print("Initialized llm_api_test")
+        except Exception as e:
+            print(f"Error initializing llm_api_test: {e}")
+
+        try:
+            tg.set_backward_engine(self.llm_api_eval, override=True)
+            print("Set backward engine")
+        except Exception as e:
+            print(f"Error setting backward engine: {e}")
+
+        try:
+            self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
+            print("Loaded task")
+        except Exception as e:
+            print(f"Error loading task: {e}")
+
+        try:
+            self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
+            print("Initialized system prompt variable")
+        except Exception as e:
+            print(f"Error initializing system prompt variable: {e}")
+
+        try:
+            self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
+            print("Initialized optimizer")
+        except Exception as e:
+            print(f"Error initializing optimizer: {e}")
+
         self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
         print("Completed TextGrad initialization")
+
         print("Starting TextGrad optimization loop")
         for i in range(5):  # Example loop for testing
             print(f"Optimization iteration {i+1}")
-            self.optimizer.step()
-            print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+            try:
+                self.optimizer.step()
+                print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+            except Exception as e:
+                print(f"Error during optimization iteration {i+1}: {e}")
             print(f"Completed optimization iteration {i+1}")
         print("Completed TextGrad optimization loop")
 
@@ -183,3 +211,7 @@ class DemoReplayStrategy(
             return int(eval_output_parsed)
 
 print("Completed demo.py execution")
+
+print('Before initializing TextGrad components')
+print('After initializing TextGrad components')
+
