@@ -12,9 +12,19 @@ from openadapt.config import config
 
 if sys.platform == "darwin":
     from . import _macos as impl
-elif sys.platform in ("win32", "linux"):
-    # TODO: implement Linux
+elif sys.platform == "win32":
     from . import _windows as impl
+elif sys.platform == "linux":
+    class LinuxWindowImpl:
+        def get_active_window_state(self, read_window_data: bool) -> dict:
+            logger.warning("Linux window state functionality is not implemented.")
+            return {}
+
+        def get_active_element_state(self, x: int, y: int) -> dict:
+            logger.warning("Linux element state functionality is not implemented.")
+            return {}
+
+    impl = LinuxWindowImpl()
 else:
     raise Exception(f"Unsupported platform: {sys.platform}")
 
@@ -56,7 +66,6 @@ def get_active_window_state(read_window_data: bool) -> dict | None:
         dict or None: A dictionary containing the state of the active window,
           or None if the state is not available.
     """
-    # TODO: save window identifier (a window's title can change, or
     try:
         return impl.get_active_window_state(read_window_data)
     except Exception as exc:
