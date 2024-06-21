@@ -67,7 +67,6 @@ def get_base(engine: sa.engine) -> sa.engine:
     metadata = MetaData(naming_convention=NAMING_CONVENTION)
     Base = declarative_base(
         cls=BaseModel,
-        bind=engine,
         metadata=metadata,
     )
     return Base
