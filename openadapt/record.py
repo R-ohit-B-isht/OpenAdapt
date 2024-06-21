@@ -1144,14 +1144,9 @@ def record(
         logger.error("Failed to acquire DB lock")
         return
 
-    # logically it makes sense to communicate from here, but when running
-    # from the tray it takes too long
-    # TODO: fix this
-    # if status_pipe:
-    #    status_pipe.send({"type": "record.starting"})
-
     logger.info(f"{task_description=}")
 
+    session = crud.get_new_session(read_and_write=True)
     recording = create_recording(task_description)
     recording_timestamp = recording.timestamp
 
