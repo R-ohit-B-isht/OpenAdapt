@@ -27,7 +27,7 @@ NAMING_CONVENTION = {
 }
 
 
-class BaseModel(DictableModel):
+class BaseModel(AllFeaturesMixin):
     """The base model for database tables."""
 
     __abstract__ = True
