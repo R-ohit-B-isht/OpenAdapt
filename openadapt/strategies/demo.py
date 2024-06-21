@@ -110,15 +110,19 @@ class DemoReplayStrategy(
         print("Completed TextGrad initialization")
 
         print("Starting TextGrad optimization loop")
-        for i in range(5):  # Example loop for testing
-            print(f"Optimization iteration {i+1}")
-            try:
-                print(f"Attempting optimization step {i+1}")
-                self.optimizer.step()
-                print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
-            except Exception as e:
-                print(f"Error during optimization iteration {i+1}: {e}")
-            print(f"Completed optimization iteration {i+1}")
+        try:
+            for i in range(5):  # Example loop for testing
+                print(f"Entering optimization iteration {i+1}")
+                try:
+                    print(f"Attempting optimization step {i+1}")
+                    self.optimizer.step()
+                    print(f"Completed optimization step {i+1}")
+                    print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+                except Exception as e:
+                    print(f"Error during optimization iteration {i+1}: {e}")
+                print(f"Exiting optimization iteration {i+1}")
+        except Exception as e:
+            print(f"Error during TextGrad optimization loop: {e}")
         print("Completed TextGrad optimization loop")
 
     def get_next_action_event(
@@ -239,4 +243,3 @@ print('Completed system prompt variable initialization')
 
 print('Starting optimizer initialization')
 print('Completed optimizer initialization')
-

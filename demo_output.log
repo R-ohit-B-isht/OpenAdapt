@@ -1,2 +1,16 @@
 Starting demo.py execution
 Completed demo.py execution
+Before initializing TextGrad components
+After initializing TextGrad components
+Starting llm_api_eval initialization
+Completed llm_api_eval initialization
+Starting llm_api_test initialization
+Completed llm_api_test initialization
+Starting backward engine setup
+Completed backward engine setup
+Starting task loading
+Completed task loading
+Starting system prompt variable initialization
+Completed system prompt variable initialization
+Starting optimizer initialization
+Completed optimizer initialization
