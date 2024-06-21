@@ -104,7 +104,7 @@ openai-whisper = {git = "https://github.com/openai/whisper.git"}
 sounddevice = "^0.4.6"
 soundfile = "^0.12.1"
 posthog = "^3.5.0"
-gradio = "^3.1.4"
+gradio = "^4.36.1"
 
 wheel = "^0.43.0"
 cython = "^3.0.10"
