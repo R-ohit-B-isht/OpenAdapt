@@ -78,6 +78,13 @@ class DemoReplayStrategy(
         print("Initialized optimizer")
         self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
         print("Completed TextGrad initialization")
+        print("Starting TextGrad optimization loop")
+        for i in range(5):  # Example loop for testing
+            print(f"Optimization iteration {i+1}")
+            self.optimizer.step()
+            print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+            print(f"Completed optimization iteration {i+1}")
+        print("Completed TextGrad optimization loop")
 
     def get_next_action_event(
         self,
