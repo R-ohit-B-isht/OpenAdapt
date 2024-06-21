@@ -47,55 +47,37 @@ class DemoReplayStrategy(
         """
         print("Initializing DemoReplayStrategy")
         super().__init__(recording)
+        print("Called super().__init__")
         self.result_history = []
         session = crud.get_new_session(read_only=True)
+        print("Obtained new session")
         self.screenshots = crud.get_screenshots(session, recording)
+        print("Retrieved screenshots")
         self.screenshot_idx = 0
 
         # Initialize TextGrad components
         print("Initializing TextGrad components")
-        self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
-        self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
-        tg.set_backward_engine(self.llm_api_eval, override=True)
-        self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
-        self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
-        self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
-        self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
+        self.initialize_textgrad()
         print("TextGrad components initialized")
 
-        # Optimize the prompt using TextGrad
-        self.system_prompt.set_value(prompt)
-        print(f"Initial prompt: {prompt}")
-        for epoch in range(3):
-            print(f"Starting epoch {epoch}")
-            for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
-                print(f"Starting step {steps} of epoch {epoch}")
-                pbar.set_description(f"Training step {steps}. Epoch {epoch}")
-                self.optimizer.zero_grad()
-                losses = []
-                for (x, y) in zip(batch_x, batch_y):
-                    x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
-                    y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
-                    print(f"Step {steps}, x: {x.value}, y: {y.value}")
-                    print(f"x shape: {x.shape}, y shape: {y.shape}")
-                    response = self.system_prompt(x)
-                    print(f"Response: {response.value}")
-                    try:
-                        eval_output_variable = self.eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
-                    except:
-                        eval_output_variable = self.eval_fn([x, y, response])
-                    print(f"Eval output variable: {eval_output_variable.value}")
-                    losses.append(eval_output_variable)
-                total_loss = tg.sum(losses)
-                print(f"Epoch {epoch}, Step {steps}, Loss: {total_loss.value}")
-                total_loss.backward()
-                self.optimizer.step()
-                print(f"Completed step {steps} of epoch {epoch}")
-                self.run_validation_revert()
-            print(f"Completed epoch {epoch}")
-        optimized_prompt = self.system_prompt.get_value()
-        print(f"Optimized prompt: {optimized_prompt}")
         print("DemoReplayStrategy initialized")
+
+    def initialize_textgrad(self):
+        print("Starting TextGrad initialization")
+        self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
+        print("Initialized llm_api_eval")
+        self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
+        print("Initialized llm_api_test")
+        tg.set_backward_engine(self.llm_api_eval, override=True)
+        print("Set backward engine")
+        self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
+        print("Loaded task")
+        self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
+        print("Initialized system prompt variable")
+        self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
+        print("Initialized optimizer")
+        self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
+        print("Completed TextGrad initialization")
 
     def get_next_action_event(
         self,
@@ -179,13 +161,18 @@ class DemoReplayStrategy(
         x, y = item
         x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
         y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+        print(f"Sample x: {x.value}, y: {y.value}")
         response = model(x)
+        print(f"Response: {response.value}")
         try:
             eval_output_variable = eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
+            print(f"Eval output variable: {eval_output_variable.value}")
             return int(eval_output_variable.value)
-        except:
+        except Exception as e:
+            print(f"Exception during evaluation: {e}")
             eval_output_variable = eval_fn([x, y, response])
             eval_output_parsed = eval_fn.parse_output(eval_output_variable)
+            print(f"Eval output parsed: {eval_output_parsed}")
             return int(eval_output_parsed)
 
 print("Completed demo.py execution")
