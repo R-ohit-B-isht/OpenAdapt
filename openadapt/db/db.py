@@ -7,7 +7,7 @@ from typing import Any, Optional
 import os
 import time
 
-from dictalchemy import DictableModel
+from sqlalchemy_mixins import AllFeaturesMixin
 from loguru import logger
 from sqlalchemy import create_engine, event
 from sqlalchemy.engine import reflection
