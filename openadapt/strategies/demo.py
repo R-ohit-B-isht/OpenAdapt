@@ -62,6 +62,39 @@ class DemoReplayStrategy(
         self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
         self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
         print("TextGrad components initialized")
+
+        # Optimize the prompt using TextGrad
+        self.system_prompt.set_value(prompt)
+        print(f"Initial prompt: {prompt}")
+        for epoch in range(3):
+            print(f"Starting epoch {epoch}")
+            for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
+                print(f"Starting step {steps} of epoch {epoch}")
+                pbar.set_description(f"Training step {steps}. Epoch {epoch}")
+                self.optimizer.zero_grad()
+                losses = []
+                for (x, y) in zip(batch_x, batch_y):
+                    x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
+                    y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+                    print(f"Step {steps}, x: {x.value}, y: {y.value}")
+                    print(f"x shape: {x.shape}, y shape: {y.shape}")
+                    response = self.system_prompt(x)
+                    print(f"Response: {response.value}")
+                    try:
+                        eval_output_variable = self.eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
+                    except:
+                        eval_output_variable = self.eval_fn([x, y, response])
+                    print(f"Eval output variable: {eval_output_variable.value}")
+                    losses.append(eval_output_variable)
+                total_loss = tg.sum(losses)
+                print(f"Epoch {epoch}, Step {steps}, Loss: {total_loss.value}")
+                total_loss.backward()
+                self.optimizer.step()
+                print(f"Completed step {steps} of epoch {epoch}")
+                self.run_validation_revert()
+            print(f"Completed epoch {epoch}")
+        optimized_prompt = self.system_prompt.get_value()
+        print(f"Optimized prompt: {optimized_prompt}")
         print("DemoReplayStrategy initialized")
 
     def get_next_action_event(
@@ -95,35 +128,6 @@ class DemoReplayStrategy(
         N = max(0, len(prompt) - MAX_INPUT_SIZE)
         prompt = prompt[N:]
 
-        # Optimize the prompt using TextGrad
-        self.system_prompt.set_value(prompt)
-        print(f"Initial prompt: {prompt}")
-        for epoch in range(3):
-            print(f"Starting epoch {epoch}")
-            for steps, (batch_x, batch_y) in enumerate((pbar := tqdm(self.train_set, position=0))):
-                print(f"Starting step {steps} of epoch {epoch}")
-                pbar.set_description(f"Training step {steps}. Epoch {epoch}")
-                self.optimizer.zero_grad()
-                losses = []
-                for (x, y) in zip(batch_x, batch_y):
-                    x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
-                    y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
-                    print(f"Step {steps}, x: {x.value}, y: {y.value}")
-                    response = self.system_prompt(x)
-                    try:
-                        eval_output_variable = self.eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
-                    except:
-                        eval_output_variable = self.eval_fn([x, y, response])
-                    losses.append(eval_output_variable)
-                total_loss = tg.sum(losses)
-                print(f"Epoch {epoch}, Step {steps}, Loss: {total_loss.value}")
-                total_loss.backward()
-                self.optimizer.step()
-                print(f"Completed step {steps} of epoch {epoch}")
-                self.run_validation_revert()
-            print(f"Completed epoch {epoch}")
-        optimized_prompt = self.system_prompt.get_value()
-        print(f"Optimized prompt: {optimized_prompt}")
         max_tokens = 10
         completion = self.get_completion(prompt, max_tokens)
 
