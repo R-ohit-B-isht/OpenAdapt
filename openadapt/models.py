@@ -199,15 +199,12 @@ class ActionEvent(db.Base):
             value
         )
 
-    children = sa.orm.relationship("ActionEvent")
-    # TODO: replacing the above line with the following two results in an error:
-    #     AttributeError: 'list' object has no attribute '_sa_instance_state'
-    # children = sa.orm.relationship(
-    #     "ActionEvent", remote_side=[id], back_populates="parent"
-    # )
-    # parent = sa.orm.relationship(
-    #     "ActionEvent", remote_side=[parent_id], back_populates="children"
-    # )  # noqa: E501
+    children = sa.orm.relationship(
+        "ActionEvent", remote_side=[id], back_populates="parent"
+    )
+    parent = sa.orm.relationship(
+        "ActionEvent", remote_side=[parent_id], back_populates="children"
+    )
 
     recording = sa.orm.relationship("Recording", back_populates="action_events")
     screenshot = sa.orm.relationship("Screenshot", back_populates="action_event")
