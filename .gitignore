@@ -47,3 +47,7 @@ poetry_install.log
 
 # Ignore logs directory
 logs/
+
+# Ignore checkpoints and segment-anything directories
+checkpoints/
+segment-anything/
