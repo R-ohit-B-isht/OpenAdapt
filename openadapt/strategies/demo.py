@@ -121,6 +121,7 @@ class DemoReplayStrategy(
                 except Exception as e:
                     print(f"Error during optimization iteration {i+1}: {e}")
                 print(f"Exiting optimization iteration {i+1}")
+                print(f"System prompt value at the end of iteration {i+1}: {self.system_prompt.value}")
         except Exception as e:
             print(f"Error during TextGrad optimization loop: {e}")
         print("Completed TextGrad optimization loop")
