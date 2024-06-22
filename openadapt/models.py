@@ -41,8 +41,6 @@ else:
             def from_vk(vk):
                 return vk
 
-    keyboard = MockKeyboard()
-
 from PIL import Image, ImageChops
 import numpy as np
 import sqlalchemy as sa
