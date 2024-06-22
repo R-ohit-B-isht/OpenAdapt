@@ -6,6 +6,7 @@ if "DISPLAY" in os.environ:
 
 # Mock oa_pynput if running in a headless environment
 if not os.environ.get("DISPLAY"):
+
     class MockKeyboard:
         def __init__(self):
             pass
@@ -46,6 +47,7 @@ import random
 from textgrad.tasks import load_task
 
 print("Instantiating DemoReplayStrategy class")
+
 
 class DemoReplayStrategy(
     HuggingFaceReplayStrategyMixin,
@@ -108,21 +110,29 @@ class DemoReplayStrategy(
 
         try:
             print("Attempting to load task")
-            self.train_set, self.val_set, self.test_set, self.eval_fn = load_task("BBH_object_counting", evaluation_api=self.llm_api_eval)
+            self.train_set, self.val_set, self.test_set, self.eval_fn = load_task(
+                "BBH_object_counting", evaluation_api=self.llm_api_eval
+            )
             print("Loaded task")
         except Exception as e:
             print(f"Error loading task: {e}")
 
         try:
             print("Attempting to initialize system prompt variable")
-            self.system_prompt = tg.Variable("", requires_grad=True, role_description="system prompt to the language model")
+            self.system_prompt = tg.Variable(
+                "",
+                requires_grad=True,
+                role_description="system prompt to the language model",
+            )
             print("Initialized system prompt variable")
         except Exception as e:
             print(f"Error initializing system prompt variable: {e}")
 
         try:
             print("Attempting to initialize optimizer")
-            self.optimizer = tg.TextualGradientDescent(engine=self.llm_api_eval, parameters=[self.system_prompt])
+            self.optimizer = tg.TextualGradientDescent(
+                engine=self.llm_api_eval, parameters=[self.system_prompt]
+            )
             print("Initialized optimizer")
         except Exception as e:
             print(f"Error initializing optimizer: {e}")
@@ -138,18 +148,30 @@ class DemoReplayStrategy(
                     print(f"Attempting optimization step {i+1}")
                     self.optimizer.step()
                     print(f"Completed optimization step {i+1}")
-                    print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+                    print(
+                        f"System prompt after iteration {i+1}: {self.system_prompt.value}"
+                    )
                     self.results["prompt"].append(self.system_prompt.value)
                     print(f"Evaluating test set after iteration {i+1}")
-                    test_acc = np.mean(self.eval_dataset(self.test_set, self.eval_fn, self.llm_api_test))
+                    test_acc = np.mean(
+                        self.eval_dataset(
+                            self.test_set, self.eval_fn, self.llm_api_test
+                        )
+                    )
                     self.results["test_acc"].append(test_acc)
                     print(f"Test accuracy after iteration {i+1}: {test_acc}")
                 except Exception as e:
                     print(f"Error during optimization iteration {i+1}: {e}")
                 print(f"Exiting optimization iteration {i+1}")
-                print(f"System prompt value at the end of iteration {i+1}: {self.system_prompt.value}")
-            print(f"Final system prompt value after optimization loop: {self.system_prompt.value}")
-            print(f"Final test accuracy after optimization loop: {self.results['test_acc'][-1]}")
+                print(
+                    f"System prompt value at the end of iteration {i+1}: {self.system_prompt.value}"
+                )
+            print(
+                f"Final system prompt value after optimization loop: {self.system_prompt.value}"
+            )
+            print(
+                f"Final test accuracy after optimization loop: {self.results['test_acc'][-1]}"
+            )
         except Exception as e:
             print(f"Error during TextGrad optimization loop: {e}")
         print("Completed TextGrad optimization loop")
@@ -197,7 +219,9 @@ class DemoReplayStrategy(
 
     def run_validation_revert(self):
         print("Running validation revert")
-        val_performance = np.mean(self.eval_dataset(self.val_set, self.eval_fn, self.system_prompt))
+        val_performance = np.mean(
+            self.eval_dataset(self.val_set, self.eval_fn, self.system_prompt)
+        )
         previous_performance = np.mean(self.results["validation_acc"][-1])
         print("val_performance: ", val_performance)
         print("previous_performance: ", previous_performance)
@@ -211,7 +235,7 @@ class DemoReplayStrategy(
         self.results["validation_acc"].append(val_performance)
         print("Completed validation revert")
 
-    def eval_dataset(self, test_set, eval_fn, model, max_samples: int=None):
+    def eval_dataset(self, test_set, eval_fn, model, max_samples: int = None):
         print("Evaluating dataset")
         if max_samples is None:
             max_samples = len(test_set)
@@ -223,7 +247,9 @@ class DemoReplayStrategy(
                 futures.append(future)
                 if len(futures) >= max_samples:
                     break
-            tqdm_loader = tqdm(concurrent.futures.as_completed(futures), total=len(futures), position=0)
+            tqdm_loader = tqdm(
+                concurrent.futures.as_completed(futures), total=len(futures), position=0
+            )
             for future in tqdm_loader:
                 acc_item = future.result()
                 accuracy_list.append(acc_item)
@@ -234,13 +260,19 @@ class DemoReplayStrategy(
     def eval_sample(self, item, eval_fn, model):
         print("Evaluating sample")
         x, y = item
-        x = tg.Variable(x, requires_grad=False, role_description="query to the language model")
-        y = tg.Variable(y, requires_grad=False, role_description="correct answer for the query")
+        x = tg.Variable(
+            x, requires_grad=False, role_description="query to the language model"
+        )
+        y = tg.Variable(
+            y, requires_grad=False, role_description="correct answer for the query"
+        )
         print(f"Sample x: {x.value}, y: {y.value}")
         response = model(x)
         print(f"Response: {response.value}")
         try:
-            eval_output_variable = eval_fn(inputs=dict(prediction=response, ground_truth_answer=y))
+            eval_output_variable = eval_fn(
+                inputs=dict(prediction=response, ground_truth_answer=y)
+            )
             print(f"Eval output variable: {eval_output_variable.value}")
             return int(eval_output_variable.value)
         except Exception as e:
@@ -250,25 +282,26 @@ class DemoReplayStrategy(
             print(f"Eval output parsed: {eval_output_parsed}")
             return int(eval_output_parsed)
 
+
 print("Completed demo.py execution")
 
-print('Before initializing TextGrad components')
-print('After initializing TextGrad components')
+print("Before initializing TextGrad components")
+print("After initializing TextGrad components")
 
-print('Starting llm_api_eval initialization')
-print('Completed llm_api_eval initialization')
+print("Starting llm_api_eval initialization")
+print("Completed llm_api_eval initialization")
 
-print('Starting llm_api_test initialization')
-print('Completed llm_api_test initialization')
+print("Starting llm_api_test initialization")
+print("Completed llm_api_test initialization")
 
-print('Starting backward engine setup')
-print('Completed backward engine setup')
+print("Starting backward engine setup")
+print("Completed backward engine setup")
 
-print('Starting task loading')
-print('Completed task loading')
+print("Starting task loading")
+print("Completed task loading")
 
-print('Starting system prompt variable initialization')
-print('Completed system prompt variable initialization')
+print("Starting system prompt variable initialization")
+print("Completed system prompt variable initialization")
 
-print('Starting optimizer initialization')
-print('Completed optimizer initialization')
+print("Starting optimizer initialization")
+print("Completed optimizer initialization")
