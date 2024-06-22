@@ -41,6 +41,8 @@ else:
             def from_vk(vk):
                 return vk
 
+    keyboard = MockKeyboard()
+
 from PIL import Image, ImageChops
 import numpy as np
 import sqlalchemy as sa
@@ -252,12 +254,12 @@ class ActionEvent(db.Base):
     ) -> keyboard.Key | keyboard.KeyCode | str | None:
         """Helper method to determine the key attribute based on available data."""
         if key_name:
-            key = keyboard.Key[key_name]
+            key = keyboard.Key[key_name] if hasattr(keyboard, 'Key') else key_name
         elif key_char:
             key = key_char
         elif key_vk:
             # TODO: verify this is correct
-            key = keyboard.KeyCode.from_vk(int(key_vk))
+            key = keyboard.KeyCode.from_vk(int(key_vk)) if hasattr(keyboard, 'KeyCode') else int(key_vk)
         else:
             key = None
         return key
