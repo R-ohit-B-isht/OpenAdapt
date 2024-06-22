@@ -8,7 +8,41 @@ import io
 import sys
 
 from loguru import logger
-from oa_pynput import keyboard
+import os
+
+# Conditionally import oa_pynput if running in a graphical environment
+if os.environ.get("DISPLAY"):
+    from oa_pynput import keyboard
+else:
+    class MockKeyboard:
+        class Controller:
+            def press(self, key):
+                pass
+
+            def release(self, key):
+                pass
+
+        class Listener:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+        class Key:
+            def __getitem__(self, item):
+                return item
+
+        class KeyCode:
+            @staticmethod
+            def from_vk(vk):
+                return vk
+
+    keyboard = MockKeyboard()
+
 from PIL import Image, ImageChops
 import numpy as np
 import sqlalchemy as sa
@@ -220,12 +254,12 @@ class ActionEvent(db.Base):
     ) -> keyboard.Key | keyboard.KeyCode | str | None:
         """Helper method to determine the key attribute based on available data."""
         if key_name:
-            key = keyboard.Key[key_name]
+            key = keyboard.Key[key_name] if hasattr(keyboard, 'Key') else key_name
         elif key_char:
             key = key_char
         elif key_vk:
             # TODO: verify this is correct
-            key = keyboard.KeyCode.from_vk(int(key_vk))
+            key = keyboard.KeyCode.from_vk(int(key_vk)) if hasattr(keyboard, 'KeyCode') else int(key_vk)
         else:
             key = None
         return key

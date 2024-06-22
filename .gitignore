@@ -9,6 +9,8 @@ __pycache__
 *.egg-info
 *~
 .venv
+venv/
+poetry_install.log
 
 # Vim
 *.sw[m-p]
@@ -38,3 +40,17 @@ src
 
 dist/
 build/
+
+# Ignore virtual environment directory and Poetry log
+venv/
+poetry_install.log
+
+# Ignore logs directory
+logs/
+
+# Ignore checkpoints and segment-anything directories
+checkpoints/
+segment-anything/
+
+# Ignore demo output log
+demo_output.log

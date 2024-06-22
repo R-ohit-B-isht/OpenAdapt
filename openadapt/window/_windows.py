@@ -1,9 +1,15 @@
+import sys
+if sys.platform == "win32":
+    import pywinauto
 from pprint import pprint
 import pickle
 import time
 
 from loguru import logger
-import pywinauto
+import platform
+
+if platform.system() == "Windows":
+    import pywinauto
 
 
 def get_active_window_state(read_window_data: bool) -> dict:
@@ -51,9 +57,7 @@ def get_active_window_state(read_window_data: bool) -> dict:
     return state
 
 
-def get_active_window_meta(
-    active_window: pywinauto.application.WindowSpecification,
-) -> dict:
+def get_active_window_meta(active_window) -> dict:
     """Get the meta information of the active window.
 
     Args:
@@ -87,18 +91,21 @@ def get_active_element_state(x: int, y: int) -> dict:
     return properties
 
 
-def get_active_window() -> pywinauto.application.WindowSpecification:
+def get_active_window():
     """Get the active window object.
 
     Returns:
-        pywinauto.application.WindowSpecification: The active window object.
+        The active window object.
     """
-    app = pywinauto.application.Application(backend="uia").connect(active_only=True)
-    window = app.top_window()
-    return window.wrapper_object()
+    if sys.platform == "win32":
+        app = pywinauto.application.Application(backend="uia").connect(active_only=True)
+        window = app.top_window()
+        return window.wrapper_object()
+    else:
+        return None
 
 
-def get_element_properties(element: pywinauto.application.WindowSpecification) -> dict:
+def get_element_properties(element) -> dict:
     """Recursively retrieves the properties of each element and its children.
 
     Args:
@@ -131,7 +138,7 @@ def get_element_properties(element: pywinauto.application.WindowSpecification) -
     return properties
 
 
-def dictify_rect(rect: pywinauto.win32structures.RECT) -> dict:
+def dictify_rect(rect) -> dict:
     """Convert a rectangle object to a dictionary.
 
     Args:
@@ -140,16 +147,19 @@ def dictify_rect(rect: pywinauto.win32structures.RECT) -> dict:
     Returns:
         dict: A dictionary representation of the rectangle.
     """
-    rect_dict = {
-        "left": rect.left,
-        "top": rect.top,
-        "right": rect.right,
-        "bottom": rect.bottom,
-    }
-    return rect_dict
+    if sys.platform == "win32":
+        rect_dict = {
+            "left": rect.left,
+            "top": rect.top,
+            "right": rect.right,
+            "bottom": rect.bottom,
+        }
+        return rect_dict
+    else:
+        return {}
 
 
-def get_properties(element: pywinauto.application.WindowSpecification) -> dict:
+def get_properties(element) -> dict:
     """Retrieves specific writable properties of an element.
 
     This function retrieves a dictionary of writable properties for a given element.
@@ -162,21 +172,22 @@ def get_properties(element: pywinauto.application.WindowSpecification) -> dict:
 
     Returns:
         A dictionary containing the writable properties of the element,
-        with property names as keys and their corres
-        ponding values.
-
+        with property names as keys and their corresponding values.
     """
-    _element_class = element.__class__
+    if sys.platform == "win32":
+        _element_class = element.__class__
 
-    class TempElement(element.__class__):
-        writable_props = pywinauto.base_wrapper.BaseWrapper.writable_props
+        class TempElement(element.__class__):
+            writable_props = pywinauto.base_wrapper.BaseWrapper.writable_props
 
-    # Instantiate the subclass
-    element.__class__ = TempElement
-    # Retrieve properties using get_properties()
-    properties = element.get_properties()
-    element.__class__ = _element_class
-    return properties
+        # Instantiate the subclass
+        element.__class__ = TempElement
+        # Retrieve properties using get_properties()
+        properties = element.get_properties()
+        element.__class__ = _element_class
+        return properties
+    else:
+        return {}
 
 
 def main() -> None:

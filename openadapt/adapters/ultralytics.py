@@ -15,11 +15,10 @@ import numpy as np
 
 # use() required when invoked from tray
 import matplotlib
-
-# importing is required for use() to work
-from PySide6.QtCore import Qt  # noqa
-
-matplotlib.use("Qt5Agg")
+if os.environ.get("DISPLAY"):
+    matplotlib.use("Qt5Agg")
+else:
+    matplotlib.use("Agg")
 
 
 from ultralytics import FastSAM

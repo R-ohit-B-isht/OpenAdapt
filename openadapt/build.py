@@ -14,7 +14,6 @@ import sys
 
 import gradio_client
 import nicegui
-import oa_pynput
 import pydicom
 import spacy_alignments
 import ultralytics
@@ -23,6 +22,44 @@ from openadapt.config import POSTHOG_HOST, POSTHOG_PUBLIC_KEY
 
 if sys.platform == "win32":
     import screen_recorder_sdk
+
+# Conditionally import oa_pynput if running in a graphical environment
+if os.environ.get("DISPLAY"):
+    import oa_pynput
+else:
+    class MockKeyboard:
+        class Controller:
+            def press(self, key):
+                pass
+
+            def release(self, key):
+                pass
+
+        class Listener:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+    class MockMouse:
+        class Controller:
+            def move(self, x, y):
+                pass
+
+            def press(self, button):
+                pass
+
+            def release(self, button):
+                pass
+
+            def scroll(self, dx, dy):
+                pass
+
+    oa_pynput = MockKeyboard()
 
 
 def main() -> None:

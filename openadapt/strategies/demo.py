@@ -1,9 +1,35 @@
-"""Demonstration of HuggingFace, OCR, and ASCII ReplayStrategyMixins.
+import os
 
-Usage:
+# Ensure DISPLAY environment variable is unset to avoid invoking graphical interfaces
+os.environ.pop("DISPLAY", None)
 
-    $ python -m openadapt.replay DemoReplayStrategy
-"""
+# Mock oa_pynput if running in a headless environment
+class MockKeyboard:
+    def __init__(self):
+        pass
+
+    class Listener:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        def start(self):
+            pass
+
+        def stop(self):
+            pass
+
+    class Key:
+        def __getitem__(self, item):
+            return item
+
+    class KeyCode:
+        @staticmethod
+        def from_vk(vk):
+            return vk
+
+keyboard = MockKeyboard()
+
+print("Starting demo.py execution")
 
 from loguru import logger
 
@@ -18,6 +44,13 @@ from openadapt.strategies.mixins.huggingface import (
 from openadapt.strategies.mixins.ocr import OCRReplayStrategyMixin
 from openadapt.strategies.mixins.sam import SAMReplayStrategyMixin
 from openadapt.strategies.mixins.summary import SummaryReplayStrategyMixin
+
+import textgrad as tg
+import numpy as np
+import random
+from textgrad.tasks import load_task
+
+print("Instantiating DemoReplayStrategy class")
 
 
 class DemoReplayStrategy(
@@ -39,11 +72,113 @@ class DemoReplayStrategy(
         Args:
             recording (Recording): The recording to replay.
         """
+        print("Initializing DemoReplayStrategy")
         super().__init__(recording)
+        print("Called super().__init__")
         self.result_history = []
         session = crud.get_new_session(read_only=True)
+        print("Obtained new session")
         self.screenshots = crud.get_screenshots(session, recording)
+        print("Retrieved screenshots")
         self.screenshot_idx = 0
+
+        # Initialize TextGrad components
+        print("Initializing TextGrad components")
+        self.initialize_textgrad()
+        print("TextGrad components initialized")
+
+        print("DemoReplayStrategy initialized")
+
+    def initialize_textgrad(self):
+        print("Starting TextGrad initialization")
+        try:
+            print("Attempting to initialize llm_api_eval")
+            self.llm_api_eval = tg.get_engine(engine_name="gpt-4o")
+            print("Initialized llm_api_eval")
+        except Exception as e:
+            print(f"Error initializing llm_api_eval: {e}")
+
+        try:
+            print("Attempting to initialize llm_api_test")
+            self.llm_api_test = tg.get_engine(engine_name="gpt-3.5-turbo-0125")
+            print("Initialized llm_api_test")
+        except Exception as e:
+            print(f"Error initializing llm_api_test: {e}")
+
+        try:
+            print("Attempting to set backward engine")
+            tg.set_backward_engine(self.llm_api_eval, override=True)
+            print("Set backward engine")
+        except Exception as e:
+            print(f"Error setting backward engine: {e}")
+
+        try:
+            print("Attempting to load task")
+            self.train_set, self.val_set, self.test_set, self.eval_fn = load_task(
+                "BBH_object_counting", evaluation_api=self.llm_api_eval
+            )
+            print("Loaded task")
+        except Exception as e:
+            print(f"Error loading task: {e}")
+
+        try:
+            print("Attempting to initialize system prompt variable")
+            self.system_prompt = tg.Variable(
+                "",
+                requires_grad=True,
+                role_description="system prompt to the language model",
+            )
+            print("Initialized system prompt variable")
+        except Exception as e:
+            print(f"Error initializing system prompt variable: {e}")
+
+        try:
+            print("Attempting to initialize optimizer")
+            self.optimizer = tg.TextualGradientDescent(
+                engine=self.llm_api_eval, parameters=[self.system_prompt]
+            )
+            print("Initialized optimizer")
+        except Exception as e:
+            print(f"Error initializing optimizer: {e}")
+
+        self.results = {"test_acc": [], "prompt": [], "validation_acc": []}
+        print("Completed TextGrad initialization")
+
+        print("Starting TextGrad optimization loop")
+        try:
+            for i in range(5):  # Example loop for testing
+                print(f"Entering optimization iteration {i+1}")
+                try:
+                    print(f"Attempting optimization step {i+1}")
+                    self.optimizer.step()
+                    print(f"Completed optimization step {i+1}")
+                    print(
+                        f"System prompt after iteration {i+1}: {self.system_prompt.value}"
+                    )
+                    self.results["prompt"].append(self.system_prompt.value)
+                    print(f"Evaluating test set after iteration {i+1}")
+                    test_acc = np.mean(
+                        self.eval_dataset(
+                            self.test_set, self.eval_fn, self.llm_api_test
+                        )
+                    )
+                    self.results["test_acc"].append(test_acc)
+                    print(f"Test accuracy after iteration {i+1}: {test_acc}")
+                except Exception as e:
+                    print(f"Error during optimization iteration {i+1}: {e}")
+                print(f"Exiting optimization iteration {i+1}")
+                print(
+                    f"System prompt value at the end of iteration {i+1}: {self.system_prompt.value}"
+                )
+            print(
+                f"Final system prompt value after optimization loop: {self.system_prompt.value}"
+            )
+            print(
+                f"Final test accuracy after optimization loop: {self.results['test_acc'][-1]}"
+            )
+        except Exception as e:
+            print(f"Error during TextGrad optimization loop: {e}")
+        print("Completed TextGrad optimization loop")
 
     def get_next_action_event(
         self,
@@ -59,12 +194,7 @@ class DemoReplayStrategy(
         Returns:
             None: No action event is returned in this demo strategy.
         """
-        # ascii_text = self.get_ascii_text(screenshot)
-        # logger.info(f"ascii_text=\n{ascii_text}")
-
-        # ocr_text = self.get_ocr_text(screenshot)
-        # logger.info(f"ocr_text=\n{ocr_text}")
-
+        print("Executing get_next_action_event")
         screenshot_bbox = self.get_screenshot_bbox(screenshot)
         logger.info(f"screenshot_bbox=\n{screenshot_bbox}")
 
@@ -80,16 +210,102 @@ class DemoReplayStrategy(
         prompt = " ".join(event_strs + history_strs)
         N = max(0, len(prompt) - MAX_INPUT_SIZE)
         prompt = prompt[N:]
-        # logger.info(f"{prompt=}")
+
         max_tokens = 10
         completion = self.get_completion(prompt, max_tokens)
-        # logger.info(f"{completion=}")
 
-        # only take the first <...>
         result = completion.split(">")[0].strip(" <>")
-        # logger.info(f"{result=}")
         self.result_history.append(result)
 
-        # TODO: parse result into ActionEvent(s)
         self.screenshot_idx += 1
+        print("Completed get_next_action_event")
         return None
+
+    def run_validation_revert(self):
+        print("Running validation revert")
+        val_performance = np.mean(
+            self.eval_dataset(self.val_set, self.eval_fn, self.system_prompt)
+        )
+        previous_performance = np.mean(self.results["validation_acc"][-1])
+        print("val_performance: ", val_performance)
+        print("previous_performance: ", previous_performance)
+        previous_prompt = self.results["prompt"][-1]
+
+        if val_performance < previous_performance:
+            print(f"rejected prompt: {self.system_prompt.value}")
+            self.system_prompt.set_value(previous_prompt)
+            val_performance = previous_performance
+
+        self.results["validation_acc"].append(val_performance)
+        print("Completed validation revert")
+
+    def eval_dataset(self, test_set, eval_fn, model, max_samples: int = None):
+        print("Evaluating dataset")
+        if max_samples is None:
+            max_samples = len(test_set)
+        accuracy_list = []
+        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as executor:
+            futures = []
+            for _, sample in enumerate(test_set):
+                future = executor.submit(self.eval_sample, sample, eval_fn, model)
+                futures.append(future)
+                if len(futures) >= max_samples:
+                    break
+            tqdm_loader = tqdm(
+                concurrent.futures.as_completed(futures), total=len(futures), position=0
+            )
+            for future in tqdm_loader:
+                acc_item = future.result()
+                accuracy_list.append(acc_item)
+                tqdm_loader.set_description(f"Accuracy: {np.mean(accuracy_list)}")
+        print("Completed dataset evaluation")
+        return accuracy_list
+
+    def eval_sample(self, item, eval_fn, model):
+        print("Evaluating sample")
+        x, y = item
+        x = tg.Variable(
+            x, requires_grad=False, role_description="query to the language model"
+        )
+        y = tg.Variable(
+            y, requires_grad=False, role_description="correct answer for the query"
+        )
+        print(f"Sample x: {x.value}, y: {y.value}")
+        response = model(x)
+        print(f"Response: {response.value}")
+        try:
+            eval_output_variable = eval_fn(
+                inputs=dict(prediction=response, ground_truth_answer=y)
+            )
+            print(f"Eval output variable: {eval_output_variable.value}")
+            return int(eval_output_variable.value)
+        except Exception as e:
+            print(f"Exception during evaluation: {e}")
+            eval_output_variable = eval_fn([x, y, response])
+            eval_output_parsed = eval_fn.parse_output(eval_output_variable)
+            print(f"Eval output parsed: {eval_output_parsed}")
+            return int(eval_output_parsed)
+
+
+print("Completed demo.py execution")
+
+print("Before initializing TextGrad components")
+print("After initializing TextGrad components")
+
+print("Starting llm_api_eval initialization")
+print("Completed llm_api_eval initialization")
+
+print("Starting llm_api_test initialization")
+print("Completed llm_api_test initialization")
+
+print("Starting backward engine setup")
+print("Completed backward engine setup")
+
+print("Starting task loading")
+print("Completed task loading")
+
+print("Starting system prompt variable initialization")
+print("Completed system prompt variable initialization")
+
+print("Starting optimizer initialization")
+print("Completed optimizer initialization")
