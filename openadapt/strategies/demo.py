@@ -26,6 +26,8 @@ import numpy as np
 import random
 from textgrad.tasks import load_task
 
+print("Instantiating DemoReplayStrategy class")
+
 class DemoReplayStrategy(
     HuggingFaceReplayStrategyMixin,
     OCRReplayStrategyMixin,
