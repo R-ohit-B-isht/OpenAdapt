@@ -118,10 +118,17 @@ class DemoReplayStrategy(
                     self.optimizer.step()
                     print(f"Completed optimization step {i+1}")
                     print(f"System prompt after iteration {i+1}: {self.system_prompt.value}")
+                    self.results["prompt"].append(self.system_prompt.value)
+                    print(f"Evaluating test set after iteration {i+1}")
+                    test_acc = np.mean(self.eval_dataset(self.test_set, self.eval_fn, self.llm_api_test))
+                    self.results["test_acc"].append(test_acc)
+                    print(f"Test accuracy after iteration {i+1}: {test_acc}")
                 except Exception as e:
                     print(f"Error during optimization iteration {i+1}: {e}")
                 print(f"Exiting optimization iteration {i+1}")
                 print(f"System prompt value at the end of iteration {i+1}: {self.system_prompt.value}")
+            print(f"Final system prompt value after optimization loop: {self.system_prompt.value}")
+            print(f"Final test accuracy after optimization loop: {self.results['test_acc'][-1]}")
         except Exception as e:
             print(f"Error during TextGrad optimization loop: {e}")
         print("Completed TextGrad optimization loop")
