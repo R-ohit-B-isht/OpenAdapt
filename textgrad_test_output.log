@@ -1,16 +1,21 @@
 Starting demo.py execution
-Completed demo.py execution
-Before initializing TextGrad components
-After initializing TextGrad components
-Starting llm_api_eval initialization
-Completed llm_api_eval initialization
-Starting llm_api_test initialization
-Completed llm_api_test initialization
-Starting backward engine setup
-Completed backward engine setup
-Starting task loading
-Completed task loading
-Starting system prompt variable initialization
-Completed system prompt variable initialization
-Starting optimizer initialization
-Completed optimizer initialization
+Traceback (most recent call last):
+  File "/home/ubuntu/OpenAdapt/openadapt/strategies/demo.py", line 32, in <module>
+    from openadapt.db import crud
+  File "/home/ubuntu/OpenAdapt/openadapt/db/crud.py", line 17, in <module>
+    from openadapt import utils
+  File "/home/ubuntu/OpenAdapt/openadapt/utils.py", line 49, in <module>
+    from openadapt.models import ActionEvent
+  File "/home/ubuntu/OpenAdapt/openadapt/models.py", line 11, in <module>
+    from oa_pynput import keyboard
+  File "/home/ubuntu/.local/lib/python3.10/site-packages/oa_pynput/__init__.py", line 40, in <module>
+    from . import keyboard
+  File "/home/ubuntu/.local/lib/python3.10/site-packages/oa_pynput/keyboard/__init__.py", line 31, in <module>
+    backend = backend(__name__)
+  File "/home/ubuntu/.local/lib/python3.10/site-packages/oa_pynput/_util/__init__.py", line 78, in backend
+    raise ImportError('this platform is not supported: {}'.format(
+ImportError: this platform is not supported: ('failed to acquire X connection: Bad display name ""', DisplayNameError(''))
+
+Try one of the following resolutions:
+
+ * Please make sure that you have an X server running, and that the DISPLAY environment variable is set correctly

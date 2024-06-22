@@ -8,7 +8,41 @@ import io
 import sys
 
 from loguru import logger
-from oa_pynput import keyboard
+import os
+
+# Conditionally import oa_pynput if running in a graphical environment
+if os.environ.get("DISPLAY"):
+    from oa_pynput import keyboard
+else:
+    class MockKeyboard:
+        class Controller:
+            def press(self, key):
+                pass
+
+            def release(self, key):
+                pass
+
+        class Listener:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+        class Key:
+            def __getitem__(self, item):
+                return item
+
+        class KeyCode:
+            @staticmethod
+            def from_vk(vk):
+                return vk
+
+    keyboard = MockKeyboard()
+
 from PIL import Image, ImageChops
 import numpy as np
 import sqlalchemy as sa

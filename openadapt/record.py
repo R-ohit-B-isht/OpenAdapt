@@ -20,7 +20,47 @@ import time
 import tracemalloc
 
 from loguru import logger
-from oa_pynput import keyboard, mouse
+import os
+
+# Conditionally import oa_pynput if running in a graphical environment
+if os.environ.get("DISPLAY"):
+    from oa_pynput import keyboard, mouse
+else:
+    class MockKeyboard:
+        class Controller:
+            def press(self, key):
+                pass
+
+            def release(self, key):
+                pass
+
+        class Listener:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+    class MockMouse:
+        class Controller:
+            def move(self, x, y):
+                pass
+
+            def press(self, button):
+                pass
+
+            def release(self, button):
+                pass
+
+            def scroll(self, dx, dy):
+                pass
+
+    keyboard = MockKeyboard()
+    mouse = MockMouse()
+
 from pympler import tracker
 import av
 

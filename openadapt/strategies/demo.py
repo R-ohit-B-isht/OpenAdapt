@@ -5,25 +5,30 @@ if "DISPLAY" in os.environ:
     del os.environ["DISPLAY"]
 
 # Mock oa_pynput if running in a headless environment
-if not os.environ.get("DISPLAY"):
+class MockKeyboard:
+    def __init__(self):
+        pass
 
-    class MockKeyboard:
-        def __init__(self):
+    class Listener:
+        def __init__(self, *args, **kwargs):
             pass
 
-        class Listener:
-            def __init__(self, *args, **kwargs):
-                pass
+        def start(self):
+            pass
 
-            def start(self):
-                pass
+        def stop(self):
+            pass
 
-            def stop(self):
-                pass
+    class Key:
+        def __getitem__(self, item):
+            return item
 
-    oa_pynput = MockKeyboard()
-else:
-    from oa_pynput import keyboard
+    class KeyCode:
+        @staticmethod
+        def from_vk(vk):
+            return vk
+
+keyboard = MockKeyboard()
 
 print("Starting demo.py execution")
 
