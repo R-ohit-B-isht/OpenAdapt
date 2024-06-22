@@ -51,3 +51,6 @@ logs/
 # Ignore checkpoints and segment-anything directories
 checkpoints/
 segment-anything/
+
+# Ignore demo output log
+demo_output.log
