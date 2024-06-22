@@ -50,7 +50,11 @@ from openadapt.models import ActionEvent
 
 # TODO: move to constants.py
 EMPTY = (None, [], {}, "")
-SCT = mss.mss()
+
+if os.environ.get("DISPLAY"):
+    SCT = mss.mss()
+else:
+    SCT = None
 
 _logger_lock = threading.Lock()
 _start_time = None
@@ -417,6 +421,8 @@ def take_screenshot() -> Image.Image:
     Returns:
         PIL.Image: The screenshot image.
     """
+    if SCT is None:
+        raise RuntimeError("Cannot take screenshot: No display environment available.")
     # monitor 0 is all in one
     monitor = SCT.monitors[0]
     sct_img = SCT.grab(monitor)
