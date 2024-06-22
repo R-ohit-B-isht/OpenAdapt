@@ -1,9 +1,28 @@
-"""Demonstration of HuggingFace, OCR, and ASCII ReplayStrategyMixins.
+import os
 
-Usage:
+# Unset DISPLAY environment variable to avoid invoking graphical interfaces
+if "DISPLAY" in os.environ:
+    del os.environ["DISPLAY"]
 
-    $ python -m openadapt.replay DemoReplayStrategy
-"""
+# Mock oa_pynput if running in a headless environment
+if not os.environ.get("DISPLAY"):
+    class MockKeyboard:
+        def __init__(self):
+            pass
+
+        class Listener:
+            def __init__(self, *args, **kwargs):
+                pass
+
+            def start(self):
+                pass
+
+            def stop(self):
+                pass
+
+    oa_pynput = MockKeyboard()
+else:
+    from oa_pynput import keyboard
 
 print("Starting demo.py execution")
 
