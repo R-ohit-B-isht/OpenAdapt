@@ -1,8 +1,7 @@
 import os
 
-# Unset DISPLAY environment variable to avoid invoking graphical interfaces
-if "DISPLAY" in os.environ:
-    del os.environ["DISPLAY"]
+# Ensure DISPLAY environment variable is unset to avoid invoking graphical interfaces
+os.environ.pop("DISPLAY", None)
 
 # Mock oa_pynput if running in a headless environment
 class MockKeyboard:
