@@ -20,6 +20,7 @@ homepage = "https://openadapt.ai/"
 
 [tool.poetry.dependencies]
 python = "3.10.x"
+typing-extensions = "4.12.2"
 alembic = "1.8.1"
 black = "23.7.0"
 pygetwindow = { version = "<0.0.5", markers = "sys_platform == 'win32'" }
